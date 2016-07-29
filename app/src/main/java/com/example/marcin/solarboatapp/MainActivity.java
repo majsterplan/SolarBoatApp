@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private BoatStatus boatStatus;
 
     private BroadcastReceiver bluetoothServiceStatusReceiver;
-    private BroadcastReceiver gpsServiceStatusReceiver;
+    //private BroadcastReceiver gpsServiceStatusReceiver;
     private BroadcastReceiver discoveringProcessReceiver;
     private BroadcastReceiver connectionStatusReceiver;
     private BroadcastReceiver uiChangesReceiver;
@@ -50,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView temperatureValue;
     private TextView temperatureValue2;
     private TextView temperatureValue3;
+
+    private boolean isAlert = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        gpsServiceStatusReceiver = new BroadcastReceiver() {
+        /*gpsServiceStatusReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
@@ -106,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        };
+        };*/
 
         discoveringProcessReceiver = new BroadcastReceiver() {
             @Override
@@ -188,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         };
 
         registerReceiver(bluetoothServiceStatusReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
-        registerReceiver(gpsServiceStatusReceiver, new IntentFilter("GPS_STATE_CHANGED"));
+        //registerReceiver(gpsServiceStatusReceiver, new IntentFilter("GPS_STATE_CHANGED"));
         IntentFilter filter1 = new IntentFilter();
         filter1.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         filter1.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
@@ -215,16 +218,19 @@ public class MainActivity extends AppCompatActivity {
         }
         if (Service.StartUpStatus.ON == BluetoothStartUpStatus || bluetoothService.getStatus()) {
             displayLog("Bluetooth włączony.");
-            bluetoothService.discoverMeasuringUnitToConnect();
+            if (!bluetoothService.discoverMeasuringUnitToConnect()) {
+                displayLog("Szukam jednostki pomiarowej.");
+            }
         }
 
         gpsService = new GpsService(appContext);
         Service.StartUpStatus gpsStartUpStatus = gpsService.start();
         if (Service.StartUpStatus.NO_SUPPORT == gpsStartUpStatus) {
-            displayLog("Urządzenie nie wspiera GPS");
+            displayLog("Urządzenie nie wspiera GPS.");
         }
         if (Service.StartUpStatus.NEED_USER_INTERACTION == gpsStartUpStatus) {
             enableGPSservice();
+            isAlert = true;
         }
         if (Service.StartUpStatus.ON == gpsStartUpStatus) {
             displayLog("GPS włączony.");
@@ -246,12 +252,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (!gpsService.getLocationManager().isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            if (gpsService.getStatus()) {
+                displayLog("GPS został wyłączony.");
+                gpsService.setStatus(false);
+            }
+            enableGPSservice();
+        } else {
+            if (!gpsService.getStatus()) {
+                displayLog("GPS został włączony.");
+                gpsService.setStatus(true);
+            }
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
 
         bluetoothService.clearConnection();
 
         unregisterReceiver(bluetoothServiceStatusReceiver);
+        //unregisterReceiver(gpsServiceStatusReceiver);
         unregisterReceiver(discoveringProcessReceiver);
         unregisterReceiver(connectionStatusReceiver);
         unregisterReceiver(uiChangesReceiver);
@@ -276,7 +300,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void enableGPSservice() {
-        if (!gpsService.getStatus()) {
+        if (!gpsService.getStatus() && !isAlert) {
             displayLog("Uruchamiam GPS.");
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this, 4);
             alert.setMessage("Aplikacja wymaga usług lokalizacyjnych.");
@@ -284,6 +308,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.cancel();
+                    isAlert = false;
                     Intent enableGPS = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                     startActivity(enableGPS);
                 }
@@ -292,9 +317,11 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.cancel();
+                    isAlert = false;
                     enableGPSservice();
                 }
             });
+            alert.setCancelable(false);
             alert.show();
         }
     }

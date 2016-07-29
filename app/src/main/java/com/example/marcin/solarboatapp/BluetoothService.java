@@ -43,8 +43,11 @@ public class BluetoothService extends Service {
         return startUpStatus;
     }
 
-    public void discoverMeasuringUnitToConnect() {
+    public boolean discoverMeasuringUnitToConnect() {
+        if (adapter.isDiscovering())
+            return false;
         adapter.startDiscovery();
+        return true;
     }
 
     public void connectMeasuringUnit() {
@@ -80,7 +83,8 @@ public class BluetoothService extends Service {
     }
 
     public void setMeasuringUnit(BluetoothDevice device) {
-        measuringUnit = device;
+        if (measuringUnit != device)
+            measuringUnit = device;
     }
 
     public BluetoothDevice getMeasuringUnit() {
@@ -115,13 +119,13 @@ public class BluetoothService extends Service {
                 appContext.sendBroadcast(intent);
             }
 
-            if (socket.isConnected()) {
-                Intent intent = new Intent();
-                intent.setAction("CONNECTION_SUCCESS");
-                intent.putExtra("message", "Nawiązano połączenie.");
-                appContext.sendBroadcast(intent);
-                manageMeasuringUnit(socket);
-            }
+            //if (socket.isConnected()) {
+            Intent intent = new Intent();
+            intent.setAction("CONNECTION_SUCCESS");
+            intent.putExtra("message", "Nawiązano połączenie.");
+            appContext.sendBroadcast(intent);
+            manageMeasuringUnit(socket);
+            //}
         }
 
         public void cancel() {

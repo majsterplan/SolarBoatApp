@@ -54,22 +54,26 @@ public class GpsService extends Service {
 
                 @Override
                 public void onProviderEnabled(String provider) {
-                    if (provider.equals(LocationManager.GPS_PROVIDER)) {
-                        Intent intent = new Intent();
-                        intent.setAction("GPS_STATE_CHANGED");
-                        intent.putExtra("state", GPS_ON);
-                        appContext.sendBroadcast(intent);
-                    }
+                    /*if (provider.equals(LocationManager.GPS_PROVIDER)) {
+                        if (!status) {
+                            Intent intent = new Intent();
+                            intent.setAction("GPS_STATE_CHANGED");
+                            intent.putExtra("state", GPS_ON);
+                            appContext.sendBroadcast(intent);
+                        }
+                    }*/
                 }
 
                 @Override
                 public void onProviderDisabled(String provider) {
-                    if (provider.equals(LocationManager.GPS_PROVIDER)) {
-                        Intent intent = new Intent();
-                        intent.setAction("GPS_STATE_CHANGED");
-                        intent.putExtra("state", GPS_OFF);
-                        appContext.sendBroadcast(intent);
-                    }
+                    /*if (provider.equals(LocationManager.GPS_PROVIDER)) {
+                        if (status) {
+                            Intent intent = new Intent();
+                            intent.setAction("GPS_STATE_CHANGED");
+                            intent.putExtra("state", GPS_OFF);
+                            appContext.sendBroadcast(intent);
+                        }
+                    }*/
                 }
             };
             if (ActivityCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {

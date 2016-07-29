@@ -14,7 +14,9 @@ public abstract class Service {
     public abstract StartUpStatus start();
 
     public void setStatus(boolean newStatus) {
-        status = newStatus;
+        if (status != newStatus) {
+            status = newStatus;
+        }
     }
 
     public boolean getStatus() {

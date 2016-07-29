@@ -9,7 +9,9 @@ public abstract class Measurement {
     protected double value;
 
     public Measurement(int newNumber) {
-        number = newNumber;
+        if (number != newNumber) {
+            number = newNumber;
+        }
     }
 
     public int getNumber() {
@@ -21,7 +23,9 @@ public abstract class Measurement {
     }
 
     public void setValue(double newValue) {
-        value = newValue;
+        if (value != newValue) {
+            value = newValue;
+        }
     }
 
     public abstract void calculateValue();
